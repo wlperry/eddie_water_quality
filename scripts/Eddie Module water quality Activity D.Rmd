@@ -1,0 +1,153 @@
+---
+title: "Eddie Module water quality Activity D"
+output: html_notebook
+---
+
+# Water Quality Module 
+This script will use the cleaned version of the data. An advanced file will be developed to use scripts to collect data from the web directly
+
+# Install the basic libraries
+```{r install libraries}
+# install.packages("tidyverse")
+# install.packages("readxl")
+# install.packages("janitor")
+# install.packages("lubridate")
+# install.packages("broom")
+# install.packages("patchwork")
+```
+
+# Load libraries    
+Load the libraries each time you run a script or program   
+```{r load libraries, message=FALSE, warning=FALSE}
+library(tidyverse) # loads a lot of libraries in this one to add more functionality
+library(readxl) # allows you to read in excel files
+library(janitor) # cleans up column names and removes empty columns if wanted
+library(lubridate) # allows easy conversion of varaibles to date format
+library(broom) # cleans up output for easy presentation
+library(patchwork)
+```
+
+           
+# Read in files
+Illinois
+```{r}
+il.df <- read_excel("../data/water_quality_module_student.xlsx",
+                    sheet = "Activity D1 Storm event", 
+                    skip = 2)
+```
+
+Kansas
+```{r}
+ks.df <- read_excel("../data/water_quality_module_student.xlsx",
+                    sheet = "Activity D2 Storm data", 
+                    skip = 2)
+```
+
+
+# Clean data
+note date and time are separated here so we need to combine them into a new column called datatime
+
+```{r}
+il.df <- il.df %>% 
+  mutate(
+    datetime = ymd_hms(paste(date, 
+                             hour(time), 
+                             minute(time), 
+                             second(time)))) %>% 
+  select(datetime, discharge_cfs, nitrate_n_mgl) %>%
+  mutate(site = "rural illinois")
+```
+
+
+```{r}
+ks.df <- ks.df %>% 
+  mutate(
+    datetime = ymd_hms(paste(date, 
+                             hour(time), 
+                             minute(time), 
+                             second(time)))) %>% 
+  select(datetime, discharge_cfs, nitrate_n_mgl)%>%
+  mutate(site = "municipal kansas")
+```
+
+
+# Plot the data
+The first thing to do is to plot all the data to see what is going on.     
+We will do this for Illinois and then Kansas.
+```{r}
+il.df %>% 
+  ggplot(aes(datetime, nitrate_n_mgl))+
+  geom_line() +
+  geom_point() +
+  labs(title = "Rural Illinois") +
+  coord_cartesian(ylim = c(0,20)) +
+  geom_hline(yintercept = 10, color="red", size = 2, alpha = .5) +
+  annotate(geom="text",
+                x=ymd_hms("2015-06-04 00:00:00"),
+                y=10.6,
+                label="EPA Drinking Water Limit",
+                fontface="bold")
+```
+
+
+```{r}
+ks.df %>% 
+  ggplot(aes(datetime, nitrate_n_mgl))+
+  geom_line() +
+  geom_point() +
+  labs(title = "Municipal Kansas") +
+  coord_cartesian(ylim = c(0,20))+
+  geom_hline(yintercept = 10, color="red", size = 2, alpha = .5) +
+  annotate(geom="text",
+                x=ymd_hms("2015-06-04 00:00:00"),
+                y=10.6,
+                label="EPA Drinking Water Limit",
+                fontface="bold")
+```
+
+# Combine data
+Lets combine the data and then work with it in a different way
+
+```{r}
+comb.df <- bind_rows(il.df, ks.df)
+```
+
+# Plot combined data
+```{r}
+n.plot <- comb.df %>% 
+  ggplot(aes(datetime, nitrate_n_mgl, color=site))+
+  geom_line() +
+  geom_point() +
+  labs(title = "Municipal Kansas") +
+  coord_cartesian(ylim = c(0,20)) +
+  geom_hline(yintercept = 10, color="red", size = 2, alpha = .5) +
+  annotate(geom="text",
+                x=ymd_hms("2015-06-04 00:00:00"),
+                y=10.6,
+                label="EPA Drinking Water Limit",
+                fontface="bold")
+n.plot
+```
+
+```{r}
+q.plot <- comb.df %>% 
+  ggplot(aes(datetime, discharge_cfs, color=site))+
+  geom_line() +
+  geom_point() +
+  labs(title = "Municipal Kansas") 
+q.plot
+```
+
+# Combined Plots of Q and N
+```{r}
+n.plot +   theme(axis.title.x=element_blank(), axis.text.x=element_blank(),
+                    legend.position = "none") +
+  q.plot+ theme(legend.position = "bottom") +
+  plot_layout(ncol = 1)+
+  plot_annotation(tag_levels = "A",
+                  tag_suffix = ")")
+```
+
+
+
+

@@ -1,0 +1,90 @@
+---
+title: "Eddie Module water quality"
+output: html_notebook
+---
+
+# Water Quality Module 
+This script will use the cleaned version of the data. An advanced file will be developed to use scripts to collect data from the web directly
+
+# Install the basic libraries
+```{r install libraries}
+# install.packages("tidyverse")
+# install.packages("readxl")
+# install.packages("janitor")
+# install.packages("lubridate")
+# install.packages("broom")
+```
+
+# Load libraries    
+Load the libraries each time you run a script or program   
+```{r load libraries, message=FALSE, warning=FALSE}
+library(tidyverse) # loads a lot of libraries in this one to add more functionality
+library(readxl) # allows you to read in excel files
+library(janitor) # cleans up column names and removes empty columns if wanted
+library(lubridate) # allows easy conversion of varaibles to date format
+library(broom) # cleans up output for easy presentation
+```
+
+           
+# Read in files
+
+```{r}
+wq.df <- read_excel("../data/water_quality_module_student.xlsx",
+                    sheet = "Activity C Simpified Data", 
+                    skip = 2)
+```
+
+# Plot the data
+The first thing to do is to plot all the data to see what is going on.     
+We will do this for discharge first and then for nitrate.
+```{r}
+wq.df %>% 
+  ggplot(aes(datetime, discharge_cfs))+
+  geom_line() +
+  geom_point()
+```
+
+```{r}
+wq.df %>% 
+  ggplot(aes(datetime, nitrate_n_mgl))+
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = 10, color="red", size = 2, alpha = .5) +
+  annotate(geom="text",
+                x=ymd_hms("2014-08-13 00:00:00"),
+                y=10.5,
+                label="EPA Drinking Water Limit",
+                fontface="bold")
+```
+
+
+# Create a probability dataset
+This will create a probability column in a new dataset called pr
+
+```{r}
+prob.df <- wq.df %>% 
+  arrange(nitrate_n_mgl) %>% 
+  mutate(rank  = 1:n()) %>% 
+  mutate(prob = rank / (n()+1)) %>%
+  mutate(pct_prob = prob * 100)
+```
+
+
+```{r}
+prob.df %>% 
+  ggplot(aes(x=pct_prob, y = nitrate_n_mgl)) +
+  geom_point() +
+  geom_hline(yintercept = 10, color="red", size = 2, alpha = .5) +
+  annotate(geom="text",
+                x=25,
+                y=10.5,
+                label="EPA Drinking Water Limit",
+                fontface="bold")
+```
+
+
+
+
+
+
+
