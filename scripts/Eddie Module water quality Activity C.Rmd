@@ -63,7 +63,7 @@ This will create a probability column in a new dataset called pr
 
 ```{r}
 prob.df <- wq.df %>% 
-  arrange(nitrate_n_mgl) %>% 
+  arrange(desc(nitrate_n_mgl))%>% 
   mutate(rank  = 1:n()) %>% 
   mutate(prob = rank / (n()+1)) %>%
   mutate(pct_prob = prob * 100)
